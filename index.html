@@ -1,1 +1,237 @@
-<p>Hello world</p>
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escape Room: The Phishing Link</title>
+<style>
+:root{--bg:#0f1a3a;--panel:#17244d;--line:#2c3c73;--text:#eef1fb;--muted:#a9b4d6;--accent:#ff7a2f;--ok:#4cd694;--bad:#ff5c6c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:800px;margin:0 auto;padding:28px 18px 80px}
+h1{font-size:2.1rem;line-height:1.15;margin:0 0 8px;color:var(--accent)}
+h2{font-size:1.4rem;margin:0 0 4px;color:var(--rc,var(--accent))}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.story{background:var(--panel);border-left:4px solid var(--accent);padding:14px 16px;border-radius:6px;margin:18px 0}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:6px 0 4px}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .4s}
+.frags{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 4px;min-height:34px}
+.frags span{background:#0a1230;border:1px solid var(--line);border-radius:6px;padding:3px 10px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.9rem}
+.hide{display:none!important}
+
+/* hub: a floor plan of doors */
+.hall{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
+.door{text-align:left;background:var(--panel);border:2px solid var(--rc);border-radius:10px 10px 4px 4px;padding:16px;color:var(--text);cursor:pointer;font:inherit;margin:0;display:block;width:100%}
+.door:hover{background:#1d2d5e}
+.door b{display:block;font-size:1.1rem;color:var(--rc)}
+.door .ic{font-size:1.8rem;display:block;margin-bottom:4px}
+.door small{color:var(--muted);display:block}
+.door.solved{border-style:dashed;opacity:.85}
+.door.solved small{color:var(--ok)}
+.door.final{grid-column:1/-1;text-align:center;border-color:var(--line)}
+.door.final.open{border-color:var(--ok);animation:pulse 1.6s infinite}
+.door.final:disabled{cursor:not-allowed;opacity:.6}
+@keyframes pulse{50%{box-shadow:0 0 0 6px rgba(76,214,148,.25)}}
+@media (prefers-reduced-motion:reduce){.door.final.open{animation:none}}
+
+/* rooms */
+.room{background:var(--panel);border:1px solid var(--line);border-top:6px solid var(--rc,var(--accent));border-radius:8px;padding:20px;margin-top:18px}
+.tag{color:var(--muted);font-size:.9rem;margin-bottom:10px}
+.mono,pre{font-family:ui-monospace,Menlo,Consolas,monospace}
+pre{background:#0a1230;border:1px solid var(--line);border-radius:6px;padding:12px;overflow-x:auto;font-size:.88rem;line-height:1.5;margin:10px 0}
+.hl{color:var(--rc,var(--accent))}
+label{display:block;padding:8px 10px;border:1px solid var(--line);border-radius:6px;margin:6px 0;cursor:pointer}
+label:hover{border-color:var(--rc,var(--accent))}
+input[type=text]{width:100%;padding:10px;border-radius:6px;border:1px solid var(--line);background:#0a1230;color:var(--text);font:inherit}
+button{font:inherit;font-weight:600;padding:9px 18px;border-radius:6px;border:0;background:var(--rc,var(--accent));color:#10142a;cursor:pointer;margin:10px 8px 0 0}
+button.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.msg{margin-top:10px;min-height:1.4em}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.hint{display:none;margin-top:10px;color:var(--muted);font-style:italic}
+table{width:100%;border-collapse:collapse;font-size:.92rem;margin:10px 0}
+td,th{border:1px solid var(--line);padding:7px 9px;text-align:left}
+th{background:#0a1230}
+.flag{font-size:1.25rem;background:#0a1230;border:2px dashed var(--ok);padding:16px;border-radius:8px;word-break:break-all;color:var(--ok)}
+</style>
+</head>
+<body>
+<main>
+
+<!-- HUB -->
+<div id="hub">
+<h1>Escape Room: The Phishing Link</h1>
+<div class="story">
+<p><b>Mission:</b> The CEO just clicked a phishing link, and malware is spreading through the company building. The IT team is locked out of the control room.</p>
+<p style="margin:0">Five rooms branch off the main hall. Enter them in any order, solve each room’s puzzle, and collect its code word. When you have all five, the Control Room door opens.</p>
+</div>
+<div class="bar"><i id="fill"></i></div>
+<div class="muted" id="status">Rooms cleared: 0 / 5</div>
+<div class="frags" id="frags"></div>
+<div class="hall">
+<button class="door" style="--rc:#ff7a2f" data-go="1"><span class="ic">🔥</span><b>The Gatehouse</b><small>Firewall rules</small></button>
+<button class="door" style="--rc:#4cc9f0" data-go="2"><span class="ic">🖧</span><b>The Server Room</b><small>Network map</small></button>
+<button class="door" style="--rc:#c77dff" data-go="3"><span class="ic">🔍</span><b>The Security Office</b><small>Log files</small></button>
+<button class="door" style="--rc:#4cd694" data-go="4"><span class="ic">📶</span><b>The Wi-Fi Lounge</b><small>Wireless settings</small></button>
+<button class="door" style="--rc:#ffd166" data-go="5"><span class="ic">🔑</span><b>The HR Office</b><small>Company policies</small></button>
+<button class="door final" id="finalDoor" style="--rc:#4cd694" data-go="win" disabled><span class="ic">🔒</span><b id="finalTitle">The Control Room</b><small id="finalSub">Locked. Clear all 5 rooms first.</small></button>
+</div>
+</div>
+
+<!-- ROOM 1 -->
+<section class="room hide" id="r1" style="--rc:#ff7a2f">
+<h2>🔥 The Gatehouse</h2>
+<div class="tag">Topic: Firewalls</div>
+<p>The guard desk shows the firewall rules. The malware got in because one rule accidentally allows dangerous traffic. Which rule is the problem?</p>
+<pre>Rule 1: ALLOW  Any → Web Server        port 443 (HTTPS)
+Rule 2: ALLOW  Any → Mail Server       port 25  (Email)
+Rule 3: DENY   Internet → Internal LAN all ports
+<span class="hl">Rule 4: ALLOW  Any → Any                all ports</span>
+Rule 5: ALLOW  Admin PC → Router       port 22  (SSH)</pre>
+<label><input type="radio" name="p1" value="1"> Rule 1</label>
+<label><input type="radio" name="p1" value="2"> Rule 2</label>
+<label><input type="radio" name="p1" value="3"> Rule 3</label>
+<label><input type="radio" name="p1" value="4"> Rule 4</label>
+<label><input type="radio" name="p1" value="5"> Rule 5</label>
+<button data-check="1">Submit</button><button class="ghost" data-hint="1">Need a hint?</button><button class="ghost" data-back>Back to hall</button>
+<div class="hint" id="h1">A good firewall follows “deny by default.” Look for the rule that lets every source reach every destination on every port.</div>
+<div class="msg" id="m1"></div>
+</section>
+
+<!-- ROOM 2 -->
+<section class="room hide" id="r2" style="--rc:#4cc9f0">
+<h2>🖧 The Server Room</h2>
+<div class="tag">Topic: Network segmentation</div>
+<p>A wall display shows the network map. The malware keeps jumping between devices because the network is not segmented properly. Which device is on the wrong segment?</p>
+<table>
+<tr><th>Segment (VLAN)</th><th>Devices on it</th></tr>
+<tr><td>VLAN 10: Guest Wi-Fi</td><td>Visitor phones, Visitor laptops, <span class="hl">Payroll Database</span></td></tr>
+<tr><td>VLAN 20: Staff</td><td>Office PCs, Printers</td></tr>
+<tr><td>VLAN 30: Servers</td><td>Web Server, Mail Server</td></tr>
+</table>
+<label><input type="radio" name="p2" value="printer"> Printers</label>
+<label><input type="radio" name="p2" value="db"> Payroll Database</label>
+<label><input type="radio" name="p2" value="mail"> Mail Server</label>
+<label><input type="radio" name="p2" value="pc"> Office PCs</label>
+<button data-check="2">Submit</button><button class="ghost" data-hint="2">Need a hint?</button><button class="ghost" data-back>Back to hall</button>
+<div class="hint" id="h2">Guests should never be able to reach sensitive data. Which device holds private information but sits next to visitor devices?</div>
+<div class="msg" id="m2"></div>
+</section>
+
+<!-- ROOM 3 -->
+<section class="room hide" id="r3" style="--rc:#c77dff">
+<h2>🔍 The Security Office</h2>
+<div class="tag">Topic: Detection and analysis</div>
+<p>A monitor shows the server logs. An attacker guessed the admin password and then stole data. Find the attacker’s IP address.</p>
+<pre>09:01:12  10.0.0.15       LOGIN SUCCESS  user=maria
+09:03:44  203.0.113.66    LOGIN FAILED   user=admin
+09:03:47  203.0.113.66    LOGIN FAILED   user=admin
+09:03:49  203.0.113.66    LOGIN FAILED   user=admin
+09:03:52  203.0.113.66    LOGIN FAILED   user=admin
+09:03:55  203.0.113.66    LOGIN SUCCESS  user=admin
+09:04:30  10.0.0.22       LOGIN SUCCESS  user=dev
+09:05:10  203.0.113.66    FILE DOWNLOAD  payroll.zip (850 MB)</pre>
+<p>Type the suspicious IP address:</p>
+<input type="text" id="ip" placeholder="Example: 192.168.1.1" autocomplete="off">
+<button data-check="3">Submit</button><button class="ghost" data-hint="3">Need a hint?</button><button class="ghost" data-back>Back to hall</button>
+<div class="hint" id="h3">Look for many failed logins in a row (a brute-force attack), followed by a success and a huge download.</div>
+<div class="msg" id="m3"></div>
+</section>
+
+<!-- ROOM 4 -->
+<section class="room hide" id="r4" style="--rc:#4cd694">
+<h2>📶 The Wi-Fi Lounge</h2>
+<div class="tag">Topic: Wi-Fi security</div>
+<p>The attacker slipped in through the lounge router. Check its settings and select <b>all 3 insecure settings</b>.</p>
+<label><input type="checkbox" name="p4" value="wep"> Encryption: WEP</label>
+<label><input type="checkbox" name="p4" value="wpa3"> Encryption: WPA3</label>
+<label><input type="checkbox" name="p4" value="wps"> WPS (push-button setup): Enabled</label>
+<label><input type="checkbox" name="p4" value="def"> Admin password: “admin” (the factory default)</label>
+<label><input type="checkbox" name="p4" value="guest"> Guest network is separated from the staff network</label>
+<button data-check="4">Submit</button><button class="ghost" data-hint="4">Need a hint?</button><button class="ghost" data-back>Back to hall</button>
+<div class="hint" id="h4">WEP is old and easy to crack, WPS can be brute-forced, and default passwords are known to every attacker. The other two settings are good.</div>
+<div class="msg" id="m4"></div>
+</section>
+
+<!-- ROOM 5 -->
+<section class="room hide" id="r5" style="--rc:#ffd166">
+<h2>🔑 The HR Office</h2>
+<div class="tag">Topic: Management controls and policies</div>
+<p>The phishing email worked because of weak security habits. Select <b>all 3 risky practices</b> from the employee handbook.</p>
+<label><input type="checkbox" name="p5" value="sticky"> Passwords are written on sticky notes on monitors</label>
+<label><input type="checkbox" name="p5" value="mfa"> Multi-factor authentication (MFA) is required for email</label>
+<label><input type="checkbox" name="p5" value="shared"> Everyone shares one admin account</label>
+<label><input type="checkbox" name="p5" value="lock"> Screens lock automatically after 5 minutes</label>
+<label><input type="checkbox" name="p5" value="reuse"> No phishing training, and staff reuse the same password everywhere</label>
+<button data-check="5">Submit</button><button class="ghost" data-hint="5">Need a hint?</button><button class="ghost" data-back>Back to hall</button>
+<div class="hint" id="h5">Good policies include MFA and auto-lock. The risky ones are exposed passwords, shared accounts, and no training or password reuse.</div>
+<div class="msg" id="m5"></div>
+</section>
+
+<!-- FINAL ROOM -->
+<section class="room hide" id="rwin" style="--rc:#4cd694">
+<h2>🔓 The Control Room</h2>
+<p>You collected all five code words and the door swings open. The malware is contained and the IT team has control again. Here is your final flag:</p>
+<div class="flag mono" id="flag"></div>
+<button id="copy">Copy flag</button><button class="ghost" id="restart">Play again</button><button class="ghost" data-back>Back to hall</button>
+</section>
+
+</main>
+
+<script>
+const words={1:"BLOCK",2:"SEGMENT",3:"TRACE",4:"ENCRYPT",5:"PROTECT"};
+const FLAG="FLAG{"+Object.values(words).join("_")+"}";
+const found=[];
+const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+const checked=n=>$$('input[name=p'+n+']:checked').map(e=>e.value).sort().join(",");
+const answers={
+ 1:()=>checked(1)==="4",
+ 2:()=>checked(2)==="db",
+ 3:()=>$("#ip").value.trim()==="203.0.113.66",
+ 4:()=>checked(4)==="def,wep,wps",
+ 5:()=>checked(5)==="reuse,shared,sticky"
+};
+function show(id){
+ $("#hub").classList.toggle("hide",id!=="hub");
+ $$(".room").forEach(r=>r.classList.toggle("hide",r.id!=="r"+id));
+ window.scrollTo({top:0});
+}
+function update(){
+ const n=found.length;
+ $("#fill").style.width=(n/5*100)+"%";
+ $("#status").textContent="Rooms cleared: "+n+" / 5";
+ $("#frags").innerHTML=found.map(i=>"<span>"+words[i]+"</span>").join("");
+ if(n===5){
+  const f=$("#finalDoor");
+  f.disabled=false;f.classList.add("open");
+  f.querySelector(".ic").textContent="🔓";
+  $("#finalSub").textContent="Unlocked! Enter the Control Room.";
+ }
+}
+$$("[data-go]").forEach(b=>b.onclick=()=>show(b.dataset.go));
+$$("[data-back]").forEach(b=>b.onclick=()=>show("hub"));
+$$("[data-check]").forEach(b=>b.onclick=()=>{
+ const n=+b.dataset.check, m=$("#m"+n);
+ if(answers[n]()){
+  if(!found.includes(n)) found.push(n);
+  m.className="msg ok";
+  m.textContent="Room cleared! Code word unlocked: "+words[n]+". Head back to the hall to pick your next room.";
+  const d=$('[data-go="'+n+'"]');
+  d.classList.add("solved");
+  d.querySelector("small").textContent="Cleared. Code word: "+words[n];
+  if(n===5||found.length===5) $("#flag").textContent=FLAG;
+  update();
+ }else{
+  m.className="msg bad";
+  m.textContent="Not quite. Try again, or use the hint.";
+ }
+});
+$$("[data-hint]").forEach(b=>b.onclick=()=>{$("#h"+b.dataset.hint).style.display="block"});
+$("#copy").onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(FLAG);$("#copy").textContent="Copied!"};
+$("#restart").onclick=()=>location.reload();
+</script>
+</body>
+</html>
