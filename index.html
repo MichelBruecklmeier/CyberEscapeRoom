@@ -88,7 +88,7 @@ th{background:#0a1230}
 <pre>Rule 1: ALLOW  Any → Web Server        port 443 (HTTPS)
 Rule 2: ALLOW  Any → Mail Server       port 25  (Email)
 Rule 3: DENY   Internet → Internal LAN all ports
-<span class="hl">Rule 4: ALLOW  Any → Any                all ports</span>
+Rule 4: ALLOW  Any → Any                all ports
 Rule 5: ALLOW  Admin PC → Router       port 22  (SSH)</pre>
 <label><input type="radio" name="p1" value="1"> Rule 1</label>
 <label><input type="radio" name="p1" value="2"> Rule 2</label>
@@ -107,7 +107,7 @@ Rule 5: ALLOW  Admin PC → Router       port 22  (SSH)</pre>
 <p>A wall display shows the network map. The malware keeps jumping between devices because the network is not segmented properly. Which device is on the wrong segment?</p>
 <table>
 <tr><th>Segment (VLAN)</th><th>Devices on it</th></tr>
-<tr><td>VLAN 10: Guest Wi-Fi</td><td>Visitor phones, Visitor laptops, <span class="hl">Payroll Database</span></td></tr>
+<tr><td>VLAN 10: Guest Wi-Fi</td><td>Visitor phones, Visitor laptops, Payroll Database</td></tr>
 <tr><td>VLAN 20: Staff</td><td>Office PCs, Printers</td></tr>
 <tr><td>VLAN 30: Servers</td><td>Web Server, Mail Server</td></tr>
 </table>
